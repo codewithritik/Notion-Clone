@@ -1,0 +1,183 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 🧭 User Flow Document — Notion + Obsidian.md (AI-Enhanced)
+
+**Version:** MVP / Phase 1  
+**Target:** Coding agents, frontend/backend engineers, product designers  
+**Platform:** Web app (fully responsive)
+
+## 👤 1. Authentication Flow
+
+### 1.1 Sign Up
+```sql
+[User clicks "Sign Up"]
+    → Enters email and password
+    → Clicks "Create Account"
+        → POST /api/auth/signup
+            → On success:
+                → Redirect to Create/Join Workspace screen
+```
+
+### 1.2 Log In
+```sql
+[User clicks "Log In"]
+    → Enters email and password
+    → Clicks "Log In"
+        → POST /api/auth/login
+            → On success:
+                → Redirect to default workspace & last opened page
+```
+
+## 🏢 2. Workspace Flow
+
+### 2.1 Create Workspace
+```pgsql
+[User clicks "Create Workspace"]
+    → Enters name
+    → Clicks "Create"
+        → POST /api/workspaces
+            → Automatically becomes Owner
+            → Redirect to /workspace/:workspaceId
+```
+
+### 2.2 Join Existing Workspace (invite-based, Phase 2)
+Not implemented in Phase 1 — skip for now.
+
+## 📄 3. Page Management Flow
+
+### 3.1 Create Page
+```pgsql
+[User clicks "+ New Page" in sidebar]
+    → Prompt for page title
+    → Optionally select from template
+        → POST /api/pages
+            → Append page to workspace page tree
+            → Redirect to TipTap editor
+```
+
+### 3.2 View Page
+```sql
+[User clicks a page in the sidebar or navigates via URL slug]
+    → GET /api/pages/:pageId
+    → Render TipTap editor with content
+```
+
+### 3.3 Edit Page
+```bash
+[User types in editor]
+    → Frontend debounces and triggers PATCH /api/pages/:pageId
+    → Autosave version → POST /api/versions
+    → WebSocket sync cursor presence → /ws/cursors/:pageId
+```
+
+### 3.4 Page Tree Navigation
+```sql
+[User opens sidebar]
+    → GET /api/pages/tree
+        → Displays hierarchy with parent-child nesting
+        → Supports drag-and-drop (calls PATCH /api/pages/:pageId with new parent)
+```
+
+## 🧠 4. Templates Flow
+
+### 4.1 Use Template
+```pgsql
+[User clicks "+ New Page"]
+    → Selects "Template"
+        → GET /api/templates
+        → Preview options: Meeting Notes, Wiki, Project Spec
+        → Uses selected template as base content
+```
+
+## 🔁 5. Version History Flow
+
+### 5.1 Auto-Save Version (on edit)
+```sql
+[User edits content]
+    → Triggers POST /api/versions (latest only, overwrites)
+```
+
+### 5.2 View Last Version
+```pgsql
+[User clicks "View History"]
+    → GET /api/versions/:pageId/latest
+        → Render read-only preview of last version
+```
+
+## 📡 6. WebSocket Sync Flow (Cursor Presence)
+
+### 6.1 Open Editor
+```pgsql
+→ Connects to WebSocket: /ws/cursors/:pageId
+    → Sends cursor presence updates
+    → Receives presence of others (if any)
+    → Only one user is allowed to edit simultaneously
+```
+
+## 🧑‍🤝‍🧑 7. Members & Permissions
+
+### 7.1 View Workspace Members
+```ruby
+→ GET /api/workspaces/:workspaceId/members
+→ Shows role: Owner, Editor, Viewer
+```
+**Note:** No invitation, no role editing in Phase 1.
+
+## 🔍 8. Search & Navigation
+
+### 8.1 Search Pages (Phase 2)
+Not in Phase 1. Use page tree for navigation.
+
+## 🧬 9. Silent Embedding Collection (AI Prep)
+
+### 9.1 On Page Create/Edit
+```css
+→ Backend triggers silent embedding collection for content
+→ Prepares vector DB (Qdrant) for future AI linking, search, and Q&A
+```
+
+## 🖼️ 10. UI Structure Navigation
+```pgsql
++-----------------------------+
+| Sidebar (collapsible)      |
+| - Pages                    |
+| - Templates                |
++-----------------------------+
+| Top Bar                    |
+| - Breadcrumbs              |
+| - Workspace Title          |
+| - Search                   |
++-----------------------------+
+| Editor (TipTap)            |
+| - Markdown + Drag blocks   |
+| - Tables, code blocks      |
++-----------------------------+
+```
+
+## 📱 11. Responsiveness Flow
+```pgsql
+[User opens on mobile]
+    → Sidebar collapses into hamburger
+    → Editor becomes single-column
+    → Buttons adapt (fixed bottom if needed)
+```
+
+## ✅ 12. Summary Flowchart
+```pgsql
+[Sign Up / Log In]
+       ↓
+[Create Workspace]
+       ↓
+[New Page / Use Template]
+       ↓
+[Edit with TipTap]
+       ↓
+[Auto-save version, sync cursor]
+       ↓
+[View last version / see presence]
+       ↓
+[Silent AI embedding triggers]
+```

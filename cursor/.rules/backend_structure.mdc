@@ -1,0 +1,245 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 🧠 Backend Architecture Documentation for "Notion + Obsidian.md (AI-Enhanced)"
+
+## 📦 1. Framework to be Used
+
+### ✅ Node.js with Express.js
+
+- **Why:** Lightweight, flexible, battle-tested ecosystem, easy integration with WebSocket, MongoDB, and OpenAI.
+- **Structure:** Modular Express app with service/controller/repository pattern.
+- **Version:** Node.js v20+, Express v4+
+
+**Folder Structure**
+```
+/backend
+  /src
+    /api
+      /controllers
+      /routes
+      /middlewares
+    /services
+    /models
+    /sockets
+    /utils
+    /config
+  /tests
+  server.js
+```
+
+## 🗄️ 2. Databases
+
+### ✅ MongoDB (Atlas)
+
+- **Used For:** Storing users, workspaces, pages, templates, versions, embeddings, etc.
+- **Why:** Flexible document structure fits rich page JSONs and user/workspace models.
+- **ORM/ODM:** Mongoose
+
+### ✅ Qdrant (optional - Phase 1 silent AI)
+
+- **Used For:** Storing vector embeddings of page content.
+- **Why:** High-performance vector DB, integrates well with OpenAI embeddings.
+- **Driver:** REST client via Axios/Node HTTP or official SDK.
+
+## 🔐 3. Authentication & Authorization
+
+### ✅ Custom JWT Auth
+
+- **Signup/Login:** Email + password
+- **Password Hashing:** bcrypt (12 rounds)
+- **Token Strategy:** 
+  - JWT access token (`15m`) and refresh token (`7d`)
+  - Stored via HttpOnly cookie OR localStorage depending on frontend setup
+- **Libraries:** jsonwebtoken, bcrypt, express-jwt, cookie-parser
+
+### ✅ Role-Based Access Control (RBAC)
+
+- **Roles:**
+  - `Owner` (can invite/remove users, delete workspace)
+  - `Editor` (can edit pages)
+  - `Viewer` (can only view pages)
+- **Middleware-based enforcement**
+  - Middleware checks workspace ID in URL or body and verifies permission
+
+## 🔌 4. Third-Party Integrations
+
+| Integration     | Use Case                                  |
+|-----------------|--------------------------------------------|
+| OpenAI API      | Generate embeddings for documents          |
+| Qdrant           | Store and retrieve embeddings             |
+| WebSocket (ws)  | Live cursor sync / edit-locking            |
+| (Optional) Sentry | Error monitoring (recommend for prod)     |
+| MongoDB Atlas   | Managed DB                                 |
+
+## 📊 5. Schema Design (MongoDB with Mongoose)
+
+### 5.1 `users`
+```ts
+{
+  _id: ObjectId,
+  email: String (unique),
+  passwordHash: String,
+  name: String,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### 5.2 `workspaces`
+```ts
+{
+  _id: ObjectId,
+  name: String,
+  createdBy: ObjectId (ref: users),
+  members: [
+    {
+      userId: ObjectId,
+      role: 'owner' | 'editor' | 'viewer'
+    }
+  ],
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### 5.3 `pages`
+```ts
+{
+  _id: ObjectId,
+  title: String,
+  slug: String,
+  content: JSON, // TipTap format
+  workspaceId: ObjectId (ref: workspaces),
+  parentId: ObjectId (ref: pages) | null,
+  createdBy: ObjectId (ref: users),
+  updatedBy: ObjectId (ref: users),
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### 5.4 `versions`
+```ts
+{
+  _id: ObjectId,
+  pageId: ObjectId (ref: pages),
+  content: JSON,
+  savedBy: ObjectId,
+  savedAt: Date
+}
+```
+
+### 5.5 `templates`
+```ts
+{
+  _id: ObjectId,
+  name: String,
+  icon: String,
+  type: 'meeting' | 'wiki' | 'spec' | 'techdoc' | 'roadmap',
+  content: JSON, // TipTap template content
+  createdAt: Date
+}
+```
+
+### 5.6 `embeddings` (Phase 1: silent)
+```ts
+{
+  _id: ObjectId,
+  pageId: ObjectId (ref: pages),
+  workspaceId: ObjectId (ref: workspaces),
+  vector: [Number], // 1536-dim OpenAI vector
+  createdAt: Date
+}
+```
+
+## 📡 6. API Design & Documentation
+
+### Format
+- RESTful JSON APIs
+- Base URL: `/api/v1`
+
+### Tools
+- Swagger/OpenAPI via Swagger UI + `swagger-jsdoc`
+- Postman collection exportable
+
+### API Examples
+
+#### Auth
+- `POST /auth/signup`
+- `POST /auth/login`
+- `POST /auth/refresh`
+- `POST /auth/logout`
+
+#### Workspaces
+- `GET /workspaces`
+- `POST /workspaces`
+- `PATCH /workspaces/:id`
+- `DELETE /workspaces/:id`
+- `POST /workspaces/:id/invite`
+
+#### Pages
+- `GET /workspaces/:workspaceId/pages`
+- `POST /workspaces/:workspaceId/pages`
+- `PATCH /pages/:id`
+- `DELETE /pages/:id`
+
+#### Templates
+- `GET /templates`
+- `POST /templates/seed` (initial seed)
+
+#### Version
+- `GET /pages/:pageId/version`
+- `POST /pages/:pageId/version/restore`
+
+#### Embeddings
+- `POST /embeddings/generate` (called silently by backend)
+
+## 🛡️ 7. Security Measures
+
+### ✅ Authentication
+- JWT tokens with expiration and refresh rotation
+- Hashing with bcrypt (min 12 rounds)
+- Rate-limiting on auth routes
+
+### ✅ Authorization
+- Middleware RBAC with role enforcement
+- Page-level auth: verify user has access to workspace
+
+### ✅ Input Validation & Sanitization
+- Joi/Zod validation on all routes
+- XSS protection on rich text content (sanitize inputs)
+
+### ✅ WebSocket Security
+- Validate JWT token on socket connection
+- Enforce only one editor per page at a time
+
+### ✅ CORS
+- CORS whitelist by env config
+
+### ✅ Environment Variables
+- Stored via `.env` and securely injected into app
+- Managed secrets: `OPENAI_API_KEY`, `JWT_SECRET`, `MONGODB_URI`, `QDRANT_URL`
+
+## 📁 Deployment & CI/CD
+
+### Dev Tools
+- Linting via ESLint + Prettier
+- Tests via Jest + Supertest
+- `.env.example` for env config
+
+### CI/CD Suggestions
+- GitHub Actions (lint, test, build)
+- Deploy to: Railway, Render, or Heroku
+
+## 📌 Developer Notes for the Agent
+
+- TipTap content must be saved as JSON without schema stripping.
+- All page content edits should go through `WebSocket + REST fallback`.
+- Silent embedding happens via backend only — client does not see.
+- Don't add block-level DB schema yet — Phase 1 is document-level only.
+- Use `slugify(title)` to auto-generate page URLs.
+
+- For frontend integration, make sure to support CORS properly.

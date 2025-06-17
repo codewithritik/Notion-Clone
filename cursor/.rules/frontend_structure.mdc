@@ -1,0 +1,196 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# 🎨 Frontend Design System & Implementation Guide
+
+**Product:** Notion + Obsidian.md (AI-Enhanced)  
+**Phase:** MVP (Phase 1)  
+**Platform:** React + TailwindCSS + TipTap + ShadCN (for UI components)
+
+---
+
+## 📚 Overview
+This guide outlines the **complete frontend design system** for building a Notion-style AI-augmented workspace. It borrows heavily from Notion’s minimalist visual aesthetic, UI behavior, and layout philosophy. The goal is to replicate the usability, flexibility, and simplicity of Notion’s workspace while adapting it for our unique use case.
+
+This document is built with the intention that a coding agent should be able to design the entire UI/UX without any ambiguity or guesswork.
+
+---
+
+## 🎨 1. Color Palette
+
+### 🔹 Primary Colors
+| Color        | Hex       | Usage                         |
+|--------------|-----------|-------------------------------|
+| Primary      | #2F3136   | Background, header, modals    |
+| Accent       | #0056F2   | Buttons, active links         |
+| Text Primary| #FFFFFF   | Main text on dark backgrounds |
+
+### 🔸 Secondary Colors
+| Color        | Hex       | Usage                         |
+|--------------|-----------|-------------------------------|
+| Secondary BG | #1E1F22   | Sidebars, panels              |
+| Border Color | #3A3B3E   | Dividers, UI borders          |
+| Subtle Text  | #A0A0A0   | Hints, placeholder text       |
+
+### 🟩 State Colors
+| State     | Hex     | Usage                  |
+|-----------|---------|------------------------|
+| Success   | #22C55E | Save confirmations     |
+| Error     | #EF4444 | Error messages         |
+| Warning   | #FACC15 | Warning UI elements    |
+
+---
+
+## 🔠 2. Fonts
+
+- **Primary Font:** Inter (Google Fonts)  
+- **Fallbacks:** system-ui, sans-serif  
+- **Weight Range:** 400 (normal) – 700 (bold)
+
+**Import via:**
+```css
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+```
+
+**Tailwind Config:**
+```js
+fontFamily: {
+  sans: ['Inter', 'system-ui', 'sans-serif']
+}
+```
+
+---
+
+## 📏 3. Spacing System
+
+Follows Tailwind’s default spacing scale with minor extensions. All spacing should be in `rem`-based utility classes.
+
+| Name  | Value (rem) | Class     |
+|-------|--------------|-----------|
+| XS    | 0.25rem      | `p-1`     |
+| SM    | 0.5rem       | `p-2`     |
+| MD    | 1rem         | `p-4`     |
+| LG    | 1.5rem       | `p-6`     |
+| XL    | 2rem         | `p-8`     |
+
+Use grid-based spacing for layout elements:
+```html
+<div class="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+```
+
+---
+
+## 🧱 4. UI Patterns
+
+### 4.1 Layout
+- **Left Sidebar:** Collapsible, dark background, workspace navigation.
+- **Top Bar:** Workspace title, breadcrumbs, search, user avatar.
+- **Main Canvas:** Editable content area with TipTap editor.
+
+### 4.2 TipTap Editor Config
+- Slash commands ("/")
+- Code blocks
+- Table support
+- Drag-and-drop blocks
+- Paste markdown -> auto-convert to rich text
+
+### 4.3 Modals
+- Use `Dialog` from ShadCN
+- Dark blurred background
+- Sharp white content card with shadow
+
+### 4.4 Buttons
+- Primary: Blue with white text (`bg-[#0056F2] text-white`)
+- Secondary: Transparent with border (`border border-gray-500 text-white`)
+
+### 4.5 Forms
+- Use ShadCN `Input`, `Textarea`, `Select` components
+- Round edges (`rounded-xl`), inner padding (`px-4 py-2`)
+
+---
+
+## 🖼️ 5. Icons
+
+### Use `lucide-react`
+- Light, customizable, modern icons.
+- Import selectively for tree-shaking.
+
+Examples:
+```tsx
+import { FileText, Settings, Search, ChevronDown } from 'lucide-react';
+```
+
+---
+
+## 📲 6. Responsiveness
+- Fully responsive from mobile to desktop
+- Use `flex`, `grid`, and `media queries` for adaptability
+- Sidebars collapse on mobile
+
+---
+
+## 📘 7. Design References
+
+- [Notion Homepage](https://www.notion.so/)
+- [Notion Page UI](https://www.notion.so/Notion-Pages)
+- [TailwindUI](https://tailwindui.com/components/application-ui/forms)
+- [ShadCN UI Kit](https://ui.shadcn.com/)
+- [TipTap Playground](https://tiptap.dev/)
+
+---
+
+## 🛠️ 8. Libraries to Use
+
+| Feature             | Library         |
+|---------------------|-----------------|
+| UI components       | `shadcn/ui`     |
+| Editor              | `@tiptap/react` |
+| Vector icons        | `lucide-react`  |
+| Forms               | `react-hook-form` + `zod` |
+| Styling             | `tailwindcss`   |
+
+---
+
+## 🔌 9. API Endpoints to Integrate (Frontend → Backend)
+
+| Feature                        | Method | Endpoint                            |
+|-------------------------------|--------|-------------------------------------|
+| Signup                        | POST   | `/api/auth/signup`                  |
+| Login                         | POST   | `/api/auth/login`                   |
+| Create Page                   | POST   | `/api/pages`                        |
+| Get Page                      | GET    | `/api/pages/:pageId`                |
+| Update Page Content           | PATCH  | `/api/pages/:pageId`                |
+| Fetch Sidebar Navigation Tree| GET    | `/api/pages/tree`                   |
+| Get Workspace Members         | GET    | `/api/workspaces/:id/members`       |
+| Get Templates                 | GET    | `/api/templates`                    |
+| Create Version (auto on edit)| POST   | `/api/versions`                     |
+| Get Last Version              | GET    | `/api/versions/:pageId/latest`      |
+| Sync Cursor via WebSocket     | WS     | `/ws/cursors/:pageId`               |
+
+---
+
+## 🧪 10. Testing (Optional for MVP)
+- Use `@testing-library/react`
+- Snapshot UI testing for consistency
+
+---
+
+## 🔗 11. Documentation Links
+
+- [TailwindCSS Docs](https://tailwindcss.com/docs)
+- [ShadCN UI Docs](https://ui.shadcn.com/docs)
+- [TipTap Docs](https://tiptap.dev/guide/introduction)
+- [Lucide Icons](https://lucide.dev/icons)
+- [Google Fonts - Inter](https://fonts.google.com/specimen/Inter)
+
+---
+
+## ✅ Summary
+This design system gives your frontend team or coding agent a **crystal clear guide** to replicate a Notion-style interface. If you want, I can also provide:
+
+- A full Tailwind theme config (`tailwind.config.js`)
+- A Next.js + Tailwind starter with this system
+- Component library (ShadCN-compatible) for pages, templates, navigation, etc.

@@ -1,0 +1,158 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 🧠 Notion + Obsidian.md (AI-Enhanced) — Product Requirement Document (PRD)
+
+## 1. 📌 Overview
+
+A modern AI-augmented workspace that combines the flexibility of Notion and the knowledge organization of Obsidian. The platform allows users to create and manage rich documents in a hierarchical structure, with future-ready capabilities like AI-powered linking, tagging, and semantic search.
+
+---
+
+## 2. 🎯 Goals & Scope for Phase 1 (MVP)
+
+### ✅ Must-Have Goals
+- Rich text editing and page organization (like Notion)
+- Workspace and user management with role-based access
+- WebSocket-based document sync with cursor presence
+- Hierarchical page navigation with markdown-style shortcuts
+- Global templates (5 types)
+- Silent AI embedding collection for future AI features
+- Mobile-responsive web interface
+
+### ❌ Out of Scope for Phase 1
+- No full AI engine yet (linking, tagging, Q&A will come later)
+- No database-style custom properties or Notion DB features
+- No media uploads (images, videos)
+- No real-time multi-user editing (only single editor sync)
+- No admin panel, analytics, or offline mode
+
+---
+
+## 3. 🧱 Core Features
+
+### 📝 Rich Document Editor
+- TipTap-based document editor
+- Markdown-like shortcuts
+- Tables, embeds, code blocks, drag-and-drop blocks
+- Slash command menu (`/`)
+
+### 🗂️ Page & Workspace Model
+- Pages support parent-child hierarchy
+- Workspaces support multiple users (like Notion)
+- Navigation via Notion-style sidebar
+
+### 🧑‍🤝‍🧑 Authentication & Roles
+- Email/password authentication (no email verification)
+- JWT-based custom auth
+- Roles: Owner, Editor, Viewer (Notion-style)
+
+### 🔄 Collaboration
+- WebSocket sync (only one editor at a time)
+- Live cursor presence shown
+- Drag-and-drop block reordering
+
+### ♻️ Version History
+- Store only the **last version** of the document
+- Allow restoring it (no diff or multi-version rollback)
+
+### 📁 Templates
+- 5 global templates:
+  - Meeting Notes
+  - Wiki Page
+  - Project Specification
+  - Technical Documentation
+  - Roadmap
+- Users **cannot** create custom templates
+
+### 🧭 Navigation
+- URL slugs for each page (like Notion)
+- Page tree rendered with whichever is easiest (lazy-load or full)
+
+### 📱 UI/UX
+- Notion-style layout with sidebar
+- Fully mobile-responsive
+- Slug-based page routing
+
+---
+
+## 4. 🔧 Detailed Functional Requirements
+
+### A. Workspaces
+- Users can create and join multiple workspaces
+- Each workspace contains its own pages and members
+- Role-based access (Owner, Editor, Viewer)
+
+### B. Pages
+- TipTap editor content stored as JSON
+- Page metadata: title, slug, parentId, createdAt, updatedAt, createdBy
+- Pages are nested (parent-child tree)
+
+### C. Authentication
+- Signup/Login via email & password
+- Token-based authentication using JWT
+- No email verification
+
+### D. WebSocket Sync
+- Only one user can edit a page at a time
+- Changes sent via socket and updated in backend
+- Cursor presence shown to others
+
+### E. Versioning
+- Save latest version per page
+- Allow restoring it from UI
+- No multi-version diff or timeline
+
+### F. AI Embedding (Silent)
+- On save/update, silently collect OpenAI/embedding vectors for the content
+- Store embeddings in separate `embeddings` collection
+- Keep schema lean for now (no tag/link structure)
+
+---
+
+## 5. 🚦 Non-Functional Requirements
+
+| Requirement       | Detail                                       |
+|-------------------|-----------------------------------------------|
+| Performance       | Fast initial page load, debounce socket sync  |
+| Security          | JWT auth, role-based access control           |
+| Scalability       | Support small teams/workspaces (Phase 1)      |
+| Mobile Support    | Responsive layout, usable on mobile browsers  |
+| Hosting           | Can be deployed on Vercel/Render/Heroku       |
+| Backup            | Not needed in Phase 1                         |
+
+---
+
+## 6. 🧰 Tech Stack & Tools
+
+| Layer         | Tool / Tech                            |
+|---------------|-----------------------------------------|
+| Frontend      | React + TipTap + Tailwind CSS           |
+| Backend       | Node.js + Express + WebSocket (ws)      |
+| DB            | MongoDB (Atlas)                         |
+| AI Embedding  | OpenAI + Qdrant (optional, silent only) |
+| Auth          | JWT (custom)                            |
+| State Mgmt    | Zustand / Context API                   |
+| Deployment    | Vercel / Render / Railway / Heroku      |
+
+---
+
+## 7. 🧱 High-Level Architecture Summary
+
+```plaintext
+            [ Client (React + TipTap) ]
+                        |
+         ------------------------------
+         |            WebSocket Server         |
+         |         (Edit Sync + Cursor)       |
+         ------------------------------
+                        |
+               [ Node.js Backend ]
+                        |
+                ----------------
+                |   MongoDB    |
+                ----------------
+                        |
+                [ Qdrant (silent) ]
